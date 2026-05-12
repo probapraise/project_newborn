@@ -20,6 +20,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\windows_bridge\Run-ActivityBridg
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\windows_bridge\Test-BridgeFlow.ps1 -Choice return_now
 ```
 
+실제 foreground 감지를 확인할 때는 대기 시간을 준 뒤 Chrome 또는 Steam 창으로 포커스를 옮긴다.
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\windows_bridge\Run-ActivityBridge.ps1 -WaitSeconds 10 -AutoChoice return_now
+```
+
+이 명령은 최대 10초 동안 Chrome/Steam foreground를 기다리고, 감지되면 한 번만 core로 전송한다.
+
 ## 로그온 등록
 
 ```powershell

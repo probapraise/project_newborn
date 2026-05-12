@@ -109,6 +109,8 @@ class RepositorySafetyTests(unittest.TestCase):
         bridge = self.repo / "windows_bridge" / "Run-ActivityBridge.ps1"
         text = bridge.read_text(encoding="utf-8").lower()
         self.assertNotIn("$pid", text)
+        self.assertIn("waitseconds", text)
+        self.assertIn("lastignoredprocess", text)
 
 
 

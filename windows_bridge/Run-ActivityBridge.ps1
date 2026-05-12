@@ -2,6 +2,7 @@ param(
     [string]$CoreUrl = 'http://127.0.0.1:8765',
     [int]$IntervalSeconds = 5,
     [switch]$Once,
+    [int]$WaitSeconds = 0,
     [switch]$SampleActivity,
     [string]$AutoChoice = ''
 )
@@ -27,17 +28,7 @@ public static class LifeOpsWin32 {
 }
 '@
 
-function Get-ForegroundActivity {
-    if ($SampleActivity) {
-        return @{
-            timestamp = [DateTimeOffset]::UtcNow.ToString('o')
-            process_name = 'chrome.exe'
-            window_title = 'YouTube - Chrome'
-            domain = 'youtube.com'
-            classification = 'chrome'
-        }
-    }
-
+function Get-ForegroundSnapshot {
     $hwnd = [LifeOpsWin32]::GetForegroundWindow()
     if ($hwnd -eq [IntPtr]::Zero) { return $null }
 
@@ -49,6 +40,24 @@ function Get-ForegroundActivity {
     if (-not $process) { return $null }
 
     $name = ($process.ProcessName + '.exe').ToLowerInvariant()
+    $title = ''
+    if ($name -eq 'chrome.exe' -or $name -eq 'steam.exe' -or $name -eq 'steamwebhelper.exe') {
+        $buffer = New-Object System.Text.StringBuilder 512
+        [void][LifeOpsWin32]::GetWindowText($hwnd, $buffer, $buffer.Capacity)
+        $title = ($buffer.ToString() -replace '\s+', ' ').Trim()
+    }
+
+    return @{
+        process_name = $name
+        window_title = $title
+    }
+}
+
+function ConvertTo-LifeOpsActivity {
+    param([hashtable]$Snapshot)
+
+    if (-not $Snapshot) { return $null }
+    $name = $Snapshot.process_name
     $classification = 'ignored'
     if ($name -eq 'chrome.exe') {
         $classification = 'chrome'
@@ -58,16 +67,26 @@ function Get-ForegroundActivity {
         return $null
     }
 
-    $buffer = New-Object System.Text.StringBuilder 512
-    [void][LifeOpsWin32]::GetWindowText($hwnd, $buffer, $buffer.Capacity)
-    $title = ($buffer.ToString() -replace '\s+', ' ').Trim()
-
     return @{
         timestamp = [DateTimeOffset]::UtcNow.ToString('o')
         process_name = $name
-        window_title = $title
+        window_title = $Snapshot.window_title
         classification = $classification
     }
+}
+
+function Get-ForegroundActivity {
+    if ($SampleActivity) {
+        return @{
+            timestamp = [DateTimeOffset]::UtcNow.ToString('o')
+            process_name = 'chrome.exe'
+            window_title = 'YouTube - Chrome'
+            domain = 'youtube.com'
+            classification = 'chrome'
+        }
+    }
+
+    return ConvertTo-LifeOpsActivity -Snapshot (Get-ForegroundSnapshot)
 }
 
 function Send-Activity {
@@ -85,6 +104,10 @@ try {
 }
 
 $lastKey = ''
+$stopAt = if ($WaitSeconds -gt 0) { [DateTimeOffset]::UtcNow.AddSeconds($WaitSeconds) } else { $null }
+$sentAny = $false
+$lastIgnoredProcess = ''
+
 do {
     $activity = Get-ForegroundActivity
     if ($activity) {
@@ -102,10 +125,29 @@ do {
                 & (Join-Path $PSScriptRoot 'Notify-Intervention.ps1') @notifyArgs
             }
             $lastKey = $key
+            $sentAny = $true
+            if ($WaitSeconds -gt 0) {
+                break
+            }
+        }
+    } elseif ($WaitSeconds -gt 0) {
+        $snapshot = Get-ForegroundSnapshot
+        if ($snapshot) {
+            $lastIgnoredProcess = $snapshot.process_name
         }
     }
 
-    if (-not $Once) {
+    if ($WaitSeconds -gt 0 -and [DateTimeOffset]::UtcNow -lt $stopAt) {
+        Start-Sleep -Milliseconds 500
+    } elseif (-not $Once -and $WaitSeconds -le 0) {
         Start-Sleep -Seconds $IntervalSeconds
     }
-} while (-not $Once)
+} while ((-not $Once -and $WaitSeconds -le 0) -or ($WaitSeconds -gt 0 -and [DateTimeOffset]::UtcNow -lt $stopAt))
+
+if ($WaitSeconds -gt 0 -and -not $sentAny) {
+    if ($lastIgnoredProcess) {
+        Write-Host "감시 범위의 foreground를 찾지 못했습니다. 마지막 foreground process: $lastIgnoredProcess"
+    } else {
+        Write-Host "감시 범위의 foreground를 찾지 못했습니다."
+    }
+}

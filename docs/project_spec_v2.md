@@ -477,8 +477,8 @@ pending intervention이 생겼을 때 최종 대화 표면을 Codex로 자연스
 
 구체 순서:
 
-1. `Run-ActivityBridge.ps1`에 `-WaitSeconds` 옵션을 추가한다.
-2. 실행 후 사용자가 Chrome 창으로 포커스를 옮길 수 있게 5-10초 대기한다.
+1. `Run-ActivityBridge.ps1 -WaitSeconds 10 -AutoChoice return_now`를 실행한다.
+2. 실행 후 사용자가 Chrome 창으로 포커스를 옮긴다.
 3. foreground가 Chrome이면 activity payload를 WSL core로 보낸다.
 4. YouTube 같은 risky title/domain이 보호 블록 중 감지되면 pending intervention을 만든다.
 5. `return_now` decision까지 기록한다.
