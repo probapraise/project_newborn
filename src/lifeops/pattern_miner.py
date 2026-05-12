@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .db import connect, init_db
+from .activity_patterns import generate_activity_rule_proposals
 from .paths import repo_root
 
 DEFAULT_TZ = timezone(timedelta(hours=9), "Asia/Seoul")
@@ -270,3 +271,8 @@ def write_weekly_analysis_context(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_weekly_analysis_context(context), encoding="utf-8")
     return path
+
+
+def create_activity_rule_proposals(*, days: int = 30, min_count: int | None = None) -> list[dict[str, object]]:
+    init_db()
+    return generate_activity_rule_proposals(days=days, min_count=min_count)

@@ -125,6 +125,12 @@ class ScopeConstraintTests(unittest.TestCase):
         self.assertIn("steamwebhelper.exe", text)
         self.assertIn("ignored_processes", text)
 
+    def test_activity_rulebook_is_editable_config(self) -> None:
+        text = (self.repo / "config" / "activity_rules.toml").read_text(encoding="utf-8").lower()
+        self.assertIn("[[chrome.rules]]", text)
+        self.assertIn("unknown_chrome_mode", text)
+        self.assertIn("learned_pattern_min_count", text)
+
     def test_app_scope_ignores_non_chrome_non_steam(self) -> None:
         from lifeops.app_scope import classify_monitored_process, is_monitored_process
 

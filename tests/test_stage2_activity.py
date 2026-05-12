@@ -107,6 +107,39 @@ class Stage2ActivityTests(unittest.TestCase):
             pending_count = conn.execute("SELECT COUNT(*) AS count FROM intervention_events WHERE status = 'pending'").fetchone()["count"]
         self.assertEqual(pending_count, 0)
 
+    def test_unknown_chrome_during_work_asks_for_plan_fit(self) -> None:
+        self._insert_current_work_block()
+        snapshot = ActivitySnapshot(
+            timestamp=utc_now(),
+            process_name="chrome.exe",
+            window_title="Unknown Forum - Chrome",
+            classification="chrome",
+        )
+        activity_id, decision = process_snapshot(snapshot)
+        self.assertEqual(decision.action, "clarify")
+        self.assertIn("룰북에 없는 Chrome 활동", decision.reason)
+        self.assertIsNotNone(activity_id)
+        with connect() as conn:
+            event = conn.execute("SELECT reason, status FROM intervention_events WHERE activity_event_id = ?", (activity_id,)).fetchone()
+        self.assertEqual(event["status"], "pending")
+        self.assertIn("현재 계획과 맞는 사용인지", event["reason"])
+
+    def test_rulebook_aligned_chrome_during_work_logs_without_intervention(self) -> None:
+        self._insert_current_work_block()
+        snapshot = ActivitySnapshot(
+            timestamp=utc_now(),
+            process_name="chrome.exe",
+            window_title="project_newborn GitHub - Chrome",
+            domain="github.com",
+            classification="chrome",
+        )
+        activity_id, decision = process_snapshot(snapshot)
+        self.assertEqual(decision.action, "log_only")
+        self.assertIsNotNone(activity_id)
+        with connect() as conn:
+            pending_count = conn.execute("SELECT COUNT(*) AS count FROM intervention_events WHERE status = 'pending'").fetchone()["count"]
+        self.assertEqual(pending_count, 0)
+
     def test_ignored_process_is_not_recorded(self) -> None:
         snapshot = ActivitySnapshot(
             timestamp=utc_now(),

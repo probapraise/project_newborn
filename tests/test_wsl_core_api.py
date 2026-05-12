@@ -10,7 +10,7 @@ from pathlib import Path
 from lifeops.activity_watcher import process_snapshot
 from lifeops.bridge_protocol import activity_snapshot_from_payload
 from lifeops.db import connect, init_db
-from lifeops.server import _pending_interventions, record_bridge_decision
+from lifeops.server import _intervention_detail, _pending_interventions, record_bridge_decision
 
 DEFAULT_TZ = timezone(timedelta(hours=9), "Asia/Seoul")
 
@@ -68,6 +68,9 @@ class WslCoreApiTests(unittest.TestCase):
         pending = _pending_interventions(1)
         self.assertEqual(len(pending), 1)
         self.assertEqual(pending[0]["status"], "pending")
+        detail = _intervention_detail(int(pending[0]["id"]))
+        self.assertIn("focus work", detail["current_plan"])
+        self.assertIn("YouTube", detail["detected_activity"])
 
     def test_bridge_decision_records_choice(self) -> None:
         snapshot = activity_snapshot_from_payload(

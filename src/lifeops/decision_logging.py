@@ -22,6 +22,13 @@ class DecisionOption:
 
 
 DECISION_OPTIONS: dict[str, DecisionOption] = {
+    "plan_aligned": DecisionOption(
+        code="plan_aligned",
+        label="\ud604\uc7ac \uacc4\ud68d\uc5d0 \ub9de\uc74c",
+        category="plan_aligned",
+        followup_action="learn_as_plan_aligned",
+        event_status="aligned",
+    ),
     "return_now": DecisionOption(
         code="return_now",
         label="\uc9c0\uae08 \ubcf5\uadc0",
@@ -83,6 +90,12 @@ ALIASES = {
     "return_to_plan": "return_now",
     "\ubcf5\uadc0": "return_now",
     "\uc9c0\uae08 \ubcf5\uadc0": "return_now",
+    "aligned": "plan_aligned",
+    "plan_match": "plan_aligned",
+    "plan_aligned": "plan_aligned",
+    "\ub9de\uc74c": "plan_aligned",
+    "\uacc4\ud68d\uc5d0 \ub9de\uc74c": "plan_aligned",
+    "\ud604\uc7ac \uacc4\ud68d\uc5d0 \ub9de\uc74c": "plan_aligned",
     "2": "intentional_rest",
     "rest": "intentional_rest",
     "intentional_break": "intentional_rest",
@@ -119,6 +132,7 @@ ALIASES = {
 
 def available_decision_options() -> list[DecisionOption]:
     return [
+        DECISION_OPTIONS["plan_aligned"],
         DECISION_OPTIONS["return_now"],
         DECISION_OPTIONS["intentional_rest"],
         DECISION_OPTIONS["fatigue"],

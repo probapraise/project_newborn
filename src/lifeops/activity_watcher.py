@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 from .db import connect, init_db, utc_now
 from .models import ActivitySnapshot
+from .activity_patterns import learned_activity_judgment
 from .paths import repo_root
 from .policy_engine import PolicyDecision, evaluate_activity
 from .schedule_engine import get_current_block
@@ -118,11 +119,26 @@ def process_snapshot(snapshot: ActivitySnapshot) -> tuple[int | None, PolicyDeci
         block_id = int(current_block["id"]) if current_block is not None else None
 
     decision = evaluate_activity(snapshot, current_block)
+    if decision.action == "clarify" and snapshot.classification == "chrome":
+        learned = learned_activity_judgment(snapshot)
+        if learned is not None and learned.category == "aligned":
+            decision = PolicyDecision(
+                "log_only",
+                f"반복 결정 패턴상 현재 계획에 맞는 Chrome 활동으로 판단합니다. {learned.reason}",
+                rule_id=f"learned:{learned.pattern_key}",
+            )
+        elif learned is not None and learned.category == "distracting":
+            decision = PolicyDecision(
+                "intervene",
+                f"반복 결정 패턴상 현재 계획과 어긋나는 Chrome 활동으로 판단합니다. {learned.reason}",
+                risk_level=decision.risk_level,
+                rule_id=f"learned:{learned.pattern_key}",
+            )
     if decision.action == "ignore":
         return None, decision
 
     activity_id = _insert_activity(snapshot)
-    if decision.action == "intervene":
+    if decision.action in {"intervene", "clarify"}:
         event_id = _insert_intervention(activity_id, block_id, decision)
         if event_id is not None:
             write_heartbeat(f"Pending intervention created: event_id={event_id}, activity_id={activity_id}.")

@@ -1,0 +1,62 @@
+# Editable LifeOps activity rulebook.
+#
+# Keep this file privacy-light: match only domains and foreground window-title
+# fragments. Do not add page-body, screenshot, or keystroke based rules.
+
+version = 1
+unknown_chrome_mode = "clarify_in_protected_block"
+learned_pattern_min_count = 2
+learned_pattern_confidence = 0.80
+
+[[chrome.rules]]
+id = "work_reference_default"
+category = "aligned"
+domains = [
+  "github.com",
+  "docs.python.org",
+  "developer.mozilla.org",
+  "stackoverflow.com",
+  "chatgpt.com",
+  "chat.openai.com",
+]
+title_contains = [
+  "github",
+  "python docs",
+  "mdn",
+  "stack overflow",
+  "openai",
+  "codex",
+]
+allowed_block_types = ["work", "research", "study", "reference", "learning"]
+reason = "작업/자료 확인 후보입니다."
+
+[[chrome.rules]]
+id = "social_video_community_default"
+category = "distracting"
+domains = [
+  "youtube.com",
+  "youtu.be",
+  "twitch.tv",
+  "reddit.com",
+  "instagram.com",
+  "x.com",
+  "dcinside.com",
+]
+title_contains = [
+  "youtube",
+  "twitch",
+  "reddit",
+  "instagram",
+  "twitter",
+  "x /",
+  "dcinside",
+  "디시인사이드",
+  "마이너 갤러리",
+]
+reason = "영상/SNS/커뮤니티 활동 후보입니다."
+
+[[steam.rules]]
+id = "steam_default"
+category = "distracting"
+processes = ["steam.exe", "steamwebhelper.exe", "steam-launched-app"]
+reason = "Steam 활동입니다."

@@ -74,6 +74,7 @@ class Stage2DecisionLoggingTests(unittest.TestCase):
 
     def test_aliases_normalize_to_canonical_choices(self) -> None:
         self.assertEqual(normalize_decision("1").code, "return_now")
+        self.assertEqual(normalize_decision("aligned").code, "plan_aligned")
         self.assertEqual(normalize_decision("false-positive").code, "false_positive")
         self.assertEqual(normalize_decision("sensory overload").code, "overload")
 
@@ -91,6 +92,15 @@ class Stage2DecisionLoggingTests(unittest.TestCase):
         self.assertEqual(exceptions["count"], 0)
         log_text = (self.tmp / "data" / "events" / "intervention_decisions.jsonl").read_text(encoding="utf-8")
         self.assertIn("return_now", log_text)
+
+    def test_plan_aligned_records_learnable_decision(self) -> None:
+        payload = record_intervention_decision(1, "plan_aligned", reason="research for current task")
+        self.assertEqual(payload["decision"], "plan_aligned")
+        self.assertEqual(payload["category"], "plan_aligned")
+        self.assertEqual(payload["event_status"], "aligned")
+        with connect() as conn:
+            event = conn.execute("SELECT status FROM intervention_events WHERE id = 1").fetchone()
+        self.assertEqual(event["status"], "aligned")
 
     def test_intentional_rest_creates_exception(self) -> None:
         payload = record_intervention_decision(1, "intentional_rest", duration_minutes=20)

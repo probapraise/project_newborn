@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from .app_scope import classify_monitored_process, is_monitored_process
-from .browser_activity import is_risky_chrome_activity
 from .models import ActivitySnapshot
+from .rulebook import ActivityRuleMatch, classify_chrome_activity, classify_steam_activity
 
 PROTECTED_BLOCK_TYPES = frozenset({"work", "appointment", "fixed", "commute", "prep", "sleep", "meal", "medication"})
 REST_BLOCK_TYPES = frozenset({"rest", "break", "intentional_rest", "recovery", "leisure"})
@@ -19,6 +19,7 @@ class PolicyDecision:
     action: str
     reason: str
     risk_level: str = "green"
+    rule_id: str = ""
 
 
 def evaluate_stage1() -> PolicyDecision:
@@ -78,6 +79,12 @@ def _risk_for_block(block: Any) -> str:
     return "green"
 
 
+def _rule_reason(prefix: str, match: ActivityRuleMatch) -> str:
+    if match.rule_id and match.rule_id != "unknown":
+        return f"{prefix} ({match.rule_id}: {match.reason})"
+    return prefix
+
+
 def evaluate_activity(snapshot: ActivitySnapshot, current_block: Any = None) -> PolicyDecision:
     if snapshot.classification not in {"chrome", "steam"}:
         return PolicyDecision(
@@ -86,30 +93,52 @@ def evaluate_activity(snapshot: ActivitySnapshot, current_block: Any = None) -> 
         )
 
     if snapshot.classification == "steam":
+        match = classify_steam_activity(snapshot.process_name)
         if _allows_recreation(current_block):
-            return PolicyDecision("log_only", "Steam 활동이 휴식/회복 블록 안에 있습니다.")
+            return PolicyDecision("log_only", "Steam 활동이 휴식/회복 블록 안에 있습니다.", rule_id=match.rule_id)
         if current_block is None:
-            return PolicyDecision("log_only", "Steam 활동이 감지되었지만 현재 계획 블록이 없습니다.")
+            return PolicyDecision("log_only", "Steam 활동이 감지되었지만 현재 계획 블록이 없습니다.", rule_id=match.rule_id)
         return PolicyDecision(
             action="intervene",
-            reason="현재 계획 블록 중 Steam 활동이 감지되었습니다.",
+            reason=_rule_reason("현재 계획 블록 중 Steam 활동이 감지되었습니다.", match),
             risk_level=_risk_for_block(current_block),
+            rule_id=match.rule_id,
         )
 
     if snapshot.classification == "chrome":
-        risky = is_risky_chrome_activity(snapshot.window_title, snapshot.domain)
-        if risky and _allows_research(current_block):
-            return PolicyDecision("log_only", "Chrome 활동이 자료 확인 블록 안에 있습니다.")
-        if risky and _allows_recreation(current_block):
-            return PolicyDecision("log_only", "Chrome 활동이 휴식/회복 블록 안에 있습니다.")
-        if risky and current_block is None:
-            return PolicyDecision("log_only", "주의가 필요한 Chrome 활동이 감지되었지만 현재 계획 블록이 없습니다.")
-        if risky and current_block is not None and not _allows_recreation(current_block):
+        match = classify_chrome_activity(snapshot.window_title, snapshot.domain, current_block)
+        if match.category == "aligned":
+            return PolicyDecision(
+                "log_only",
+                _rule_reason("룰북상 현재 계획에 맞는 Chrome 활동으로 기록합니다.", match),
+                rule_id=match.rule_id,
+            )
+        if match.category == "distracting" and _allows_research(current_block):
+            return PolicyDecision("log_only", "Chrome 활동이 자료 확인 블록 안에 있습니다.", rule_id=match.rule_id)
+        if match.category == "distracting" and _allows_recreation(current_block):
+            return PolicyDecision("log_only", "Chrome 활동이 휴식/회복 블록 안에 있습니다.", rule_id=match.rule_id)
+        if match.category == "distracting" and current_block is None:
+            return PolicyDecision(
+                "log_only",
+                _rule_reason("주의가 필요한 Chrome 활동이 감지되었지만 현재 계획 블록이 없습니다.", match),
+                rule_id=match.rule_id,
+            )
+        if match.category == "distracting" and current_block is not None and not _allows_recreation(current_block):
             return PolicyDecision(
                 action="intervene",
-                reason="현재 계획 블록 중 주의가 필요한 Chrome 활동이 감지되었습니다.",
+                reason=_rule_reason("현재 계획 블록 중 주의가 필요한 Chrome 활동이 감지되었습니다.", match),
                 risk_level=_risk_for_block(current_block),
+                rule_id=match.rule_id,
             )
+        if current_block is not None and not _allows_recreation(current_block):
+            return PolicyDecision(
+                action="clarify",
+                reason="룰북에 없는 Chrome 활동입니다. 현재 계획과 맞는 사용인지 확인이 필요합니다.",
+                risk_level=_risk_for_block(current_block),
+                rule_id="unknown_chrome",
+            )
+        if current_block is None:
+            return PolicyDecision("log_only", "룰북에 없는 Chrome 활동이지만 현재 계획 블록이 없습니다.", rule_id="unknown_chrome")
         return PolicyDecision("log_only", "Chrome 활동을 범위 내 이벤트로 기록합니다.")
 
     return PolicyDecision("ignore", "Chrome/Steam 범위 밖 활동입니다.")

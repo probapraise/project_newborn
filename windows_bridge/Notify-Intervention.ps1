@@ -9,11 +9,12 @@ Set-StrictMode -Version Latest
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $choices = @(
-    @{ Number = '1'; Choice = 'return_now'; Label = '지금 복귀' },
-    @{ Number = '2'; Choice = 'intentional_rest'; Label = '의도적 휴식으로 등록' },
-    @{ Number = '3'; Choice = 'fatigue'; Label = '피로 예외' },
-    @{ Number = '4'; Choice = 'adjust_plan'; Label = '계획 자체를 수정' },
-    @{ Number = '5'; Choice = 'false_positive'; Label = '오탐으로 표시' }
+    @{ Number = '1'; Choice = 'plan_aligned'; Label = '현재 계획에 맞음' },
+    @{ Number = '2'; Choice = 'return_now'; Label = '계획과 어긋남, 지금 복귀' },
+    @{ Number = '3'; Choice = 'intentional_rest'; Label = '의도적 휴식으로 등록' },
+    @{ Number = '4'; Choice = 'fatigue'; Label = '피로 예외' },
+    @{ Number = '5'; Choice = 'adjust_plan'; Label = '계획 자체를 수정' },
+    @{ Number = '6'; Choice = 'false_positive'; Label = '오탐으로 표시' }
 )
 
 if ($EventId -le 0) {
@@ -25,9 +26,14 @@ if ($EventId -le 0) {
     $EventId = [int]$pending.items[0].id
 }
 
+$detail = Invoke-RestMethod -Method Get -Uri "$CoreUrl/interventions/$EventId"
+
 Write-Host ''
 Write-Host "LifeOps intervention #$EventId"
-Write-Host '현재 계획과 감지된 활동이 어긋났습니다. 지금 어떻게 처리할까요?'
+Write-Host "현재 계획: $($detail.current_plan)"
+Write-Host "감지된 활동: $($detail.detected_activity)"
+Write-Host "사유: $($detail.reason)"
+Write-Host '이 활동은 현재 계획에 맞나요?'
 foreach ($item in $choices) {
     Write-Host "$($item.Number). $($item.Label)"
 }

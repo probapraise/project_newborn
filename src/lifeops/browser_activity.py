@@ -8,31 +8,7 @@ from __future__ import annotations
 
 import re
 
-RISKY_DOMAIN_HINTS = frozenset(
-    {
-        "dcinside.com",
-        "youtube.com",
-        "youtu.be",
-        "twitch.tv",
-        "reddit.com",
-        "instagram.com",
-        "x.com",
-    }
-)
-
-RISKY_TITLE_HINTS = frozenset(
-    {
-        "dcinside",
-        "디시인사이드",
-        "마이너 갤러리",
-        "youtube",
-        "twitch",
-        "reddit",
-        "instagram",
-        "x /",
-        "twitter",
-    }
-)
+from .rulebook import classify_chrome_activity
 
 _DOMAIN_RE = re.compile(r"\b(?:https?://)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)\b", re.IGNORECASE)
 
@@ -47,8 +23,8 @@ def extract_domain_from_text(text: str | None) -> str | None:
 
 
 def is_risky_chrome_activity(window_title: str | None, domain: str | None) -> bool:
-    normalized_domain = (domain or "").lower()
-    if normalized_domain in RISKY_DOMAIN_HINTS:
-        return True
-    title = (window_title or "").lower()
-    return any(hint in title for hint in RISKY_TITLE_HINTS)
+    return classify_chrome_activity(window_title, domain).category == "distracting"
+
+
+def is_known_aligned_chrome_activity(window_title: str | None, domain: str | None) -> bool:
+    return classify_chrome_activity(window_title, domain).category == "aligned"

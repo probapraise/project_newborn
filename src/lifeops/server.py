@@ -59,6 +59,64 @@ def _pending_interventions(limit: int) -> list[dict[str, Any]]:
     return [_row_dict(row) for row in rows]
 
 
+def _format_plan(row: Any) -> str:
+    if row is None or row["block_id"] is None:
+        return "현재 계획 블록 없음"
+    return (
+        f"{row['start_time']}-{row['end_time']} "
+        f"{row['block_type']} / {row['block_title']} ({row['enforcement_level']})"
+    )
+
+
+def _format_activity(row: Any) -> str:
+    if row is None or row["activity_id"] is None:
+        return "감지된 활동 없음"
+    parts = [str(row["process_name"] or "unknown")]
+    if row["window_title"]:
+        parts.append(str(row["window_title"]))
+    if row["domain"]:
+        parts.append(str(row["domain"]))
+    return " / ".join(parts)
+
+
+def _intervention_detail(event_id: int) -> dict[str, Any]:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                ie.id,
+                ie.timestamp,
+                ie.activity_event_id,
+                ie.schedule_block_id,
+                ie.risk_level,
+                ie.reason,
+                ie.status,
+                ae.id AS activity_id,
+                ae.process_name,
+                ae.window_title,
+                ae.domain,
+                ae.classification,
+                sb.id AS block_id,
+                sb.start_time,
+                sb.end_time,
+                sb.type AS block_type,
+                sb.title AS block_title,
+                sb.enforcement_level
+            FROM intervention_events ie
+            LEFT JOIN activity_events ae ON ae.id = ie.activity_event_id
+            LEFT JOIN schedule_blocks sb ON sb.id = ie.schedule_block_id
+            WHERE ie.id = ?
+            """,
+            (event_id,),
+        ).fetchone()
+    if row is None:
+        raise LookupError(f"Intervention event #{event_id} not found.")
+    payload = _row_dict(row)
+    payload["current_plan"] = _format_plan(row)
+    payload["detected_activity"] = _format_activity(row)
+    return payload
+
+
 def _safe_limit(value: str | None, default: int = 1) -> int:
     if value is None:
         return default
@@ -135,6 +193,12 @@ class LifeOpsRequestHandler(BaseHTTPRequestHandler):
                 limit = _safe_limit(query.get("limit", [None])[0])
                 self._send_json(HTTPStatus.OK, {"items": _pending_interventions(limit)})
                 return
+            if parsed.path.startswith("/interventions/"):
+                parts = parsed.path.strip("/").split("/")
+                if len(parts) == 2:
+                    self._send_json(HTTPStatus.OK, _intervention_detail(int(parts[1])))
+                    return
+                raise ValueError("invalid intervention path.")
             self._send_error_json(HTTPStatus.NOT_FOUND, "not found")
         except ValueError as exc:
             self._send_error_json(HTTPStatus.BAD_REQUEST, str(exc))
@@ -158,6 +222,7 @@ class LifeOpsRequestHandler(BaseHTTPRequestHandler):
                             "action": decision.action,
                             "reason": decision.reason,
                             "risk_level": decision.risk_level,
+                            "rule_id": decision.rule_id,
                         },
                         "intervention": _pending_intervention_for_activity(activity_id),
                     },

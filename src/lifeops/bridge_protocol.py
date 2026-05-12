@@ -8,6 +8,7 @@ from .models import ActivitySnapshot
 
 DECISION_CHOICES = frozenset(
     {
+        "plan_aligned",
         "return_now",
         "intentional_rest",
         "fatigue",

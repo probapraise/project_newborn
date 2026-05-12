@@ -129,6 +129,9 @@ LifeOps Codex Operator는 사용자의 별도 AI 앱이 아니라, Codex CLI/Cod
 - Chrome/Steam 범위 내 활동만 기록
 - 감시 범위 밖 활동은 제목 저장 없이 무시
 - Chrome 제목/도메인 힌트 기반 위험 활동 분류 골격
+- `config/activity_rules.toml` 기반 Chrome/Steam activity 룰북
+- 룰북에 없는 Chrome 활동에 대한 계획 적합 여부 확인 개입
+- `plan_aligned` decision과 반복 패턴 기반 learned judgment
 - Steam 및 Steam 하위 foreground 앱을 게임 게이트웨이로 분류
 - 현재 계획 블록과 충돌 시 `intervention_events`에 pending 이벤트 생성
 - 개입 쿨다운 기본 정책
@@ -146,6 +149,8 @@ LifeOps Codex Operator는 사용자의 별도 AI 앱이 아니라, Codex CLI/Cod
 - `src/lifeops/windows_activity.py`
 - `src/lifeops/activity_watcher.py`
 - `src/lifeops/browser_activity.py`
+- `src/lifeops/rulebook.py`
+- `src/lifeops/activity_patterns.py`
 - `src/lifeops/policy_engine.py`
 - `src/lifeops/event_dispatcher.py`
 - `src/lifeops/codex_bridge.py`
@@ -288,7 +293,8 @@ Clean repo에서는 이 목표를 WSL2 core / Windows bridge 기준으로 다시
 - activity/intervention/decision 로그 요약 1차 구현
 - 피로 예외, 복귀 시간, 반복 마찰 지점 집계
 - `codex exec`용 weekly pattern prompt 정리
-- rule proposal 생성
+- activity rule proposal을 weekly review에 연결
+- rule proposal 승인 후 `config/activity_rules.toml`에 반영하는 workflow
 - 승인 전 자동 적용 금지
 
 완료 기준:

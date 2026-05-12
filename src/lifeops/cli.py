@@ -9,6 +9,7 @@ from .boot import write_boot_context, write_boot_prompt
 from .db import connect, init_db, table_names
 from .daily_summary import write_daily_summary
 from .decision_logging import decision_help_text, normalize_decision, record_intervention_decision
+from .pattern_miner import create_activity_rule_proposals
 from .recovery import enter_recovery_mode
 from .schedule_engine import format_block, get_current_block, get_fixed_obligations
 
@@ -176,6 +177,15 @@ def cmd_write_daily_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_generate_activity_rule_proposals(args: argparse.Namespace) -> int:
+    proposals = create_activity_rule_proposals(days=args.days, min_count=args.min_count)
+    if not proposals:
+        print("새 activity rule proposal 없음")
+        return 0
+    print(json.dumps(proposals, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lifeops", description="LifeOps Codex Operator local CLI")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -228,6 +238,11 @@ def build_parser() -> argparse.ArgumentParser:
     daily.add_argument("--output")
     daily.add_argument("--date", help="Local date in YYYY-MM-DD format. Defaults to today in Asia/Seoul.")
     daily.set_defaults(func=cmd_write_daily_summary)
+
+    rule_proposals = sub.add_parser("generate-activity-rule-proposals")
+    rule_proposals.add_argument("--days", type=int, default=30)
+    rule_proposals.add_argument("--min-count", type=int)
+    rule_proposals.set_defaults(func=cmd_generate_activity_rule_proposals)
 
     return parser
 

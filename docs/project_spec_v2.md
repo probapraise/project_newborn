@@ -231,6 +231,48 @@ MVP 감시 범위는 의도적으로 작다.
 
 감시 범위 확대는 코드 변경으로 바로 적용하지 않는다. 먼저 시스템 조정 제안으로 남기고 사용자가 승인한 뒤 반영한다.
 
+## 9.1 Activity rulebook
+
+Chrome/Steam 분류는 코드에 직접 문자열을 누적하지 않는다. 수정 가능한 룰북을 둔다.
+
+현재 룰북:
+
+- `config/activity_rules.toml`
+
+룰북 원칙:
+
+- rule category는 `aligned`, `distracting`, `unknown`으로 해석한다.
+- Chrome은 domain과 foreground window title fragment만 사용한다.
+- page body, screenshot, keystroke는 룰 조건으로 쓰지 않는다.
+- 업무/자료 확인 사이트는 `aligned` rule로 둔다.
+- 영상/SNS/커뮤니티 사이트는 `distracting` rule로 둔다.
+- Steam은 기본적으로 보호 블록 중 distracting으로 본다.
+
+룰북에 없는 Chrome 활동 처리:
+
+```text
+Chrome foreground
+-> 룰북에 domain/title match 없음
+-> 현재 계획 블록이 work/study/research 등 보호/집중 블록
+-> pending clarification intervention 생성
+-> "현재 계획은 X인데, 이 활동은 계획에 맞나요?"라고 확인
+```
+
+사용자 결정은 다음 패턴 학습 신호가 된다.
+
+- `plan_aligned`: 현재 계획에 맞는 사용으로 학습 후보
+- `return_now`: 계획과 어긋나는 사용으로 학습 후보
+- `intentional_rest`: 현재 계획과 다르지만 예외/휴식으로 처리
+- `false_positive`: 감지/분류 조정 후보
+
+반복 패턴 장치:
+
+- 같은 domain/title 패턴에 대해 일관된 결정이 2회 이상 쌓이면 learned judgment로 사용한다.
+- 반복적으로 `plan_aligned`가 선택된 패턴은 같은 상황에서 더 이상 매번 묻지 않고 log-only로 처리할 수 있다.
+- 반복적으로 `return_now`가 선택된 패턴은 계획과 어긋나는 활동으로 판단한다.
+- `generate-activity-rule-proposals` CLI는 반복 결정에서 `rule_proposals` 후보를 만든다.
+- 승인 전에는 룰북 파일을 자동 수정하지 않는다.
+
 ## 10. API 계약
 
 기본 bind:
@@ -447,7 +489,8 @@ pending intervention이 생겼을 때 최종 대화 표면을 Codex로 자연스
 - weekly context CLI 추가
 - `Run-WeeklyAnalysis.ps1`를 WSL 기준으로 재작성
 - Codex exec prompt 정리
-- rule proposal 파일/DB workflow 정리
+- activity rule proposal 생성 CLI를 weekly review에 연결
+- rule proposal 승인/룰북 반영 workflow 정리
 - proposal은 최대 3개만 생성
 - 승인 전 자동 적용 금지
 
@@ -473,16 +516,16 @@ pending intervention이 생겼을 때 최종 대화 표면을 Codex로 자연스
 
 ## 14. 다음에 바로 할 일
 
-가장 가까운 작업은 실제 foreground 감지 검증이다.
+가장 가까운 작업은 룰북 기반 unknown Chrome clarification 루프를 실사용 검증하는 것이다.
 
 구체 순서:
 
-1. `Run-ActivityBridge.ps1 -WaitSeconds 10 -AutoChoice return_now`를 실행한다.
-2. 실행 후 사용자가 Chrome 창으로 포커스를 옮긴다.
-3. foreground가 Chrome이면 activity payload를 WSL core로 보낸다.
-4. YouTube 같은 risky title/domain이 보호 블록 중 감지되면 pending intervention을 만든다.
-5. `return_now` decision까지 기록한다.
-6. Chrome이 아닌 foreground에서는 제목을 저장하지 않는지 확인한다.
+1. 현재 시간대에 work/study 보호 블록을 만든다.
+2. `Run-ActivityBridge.ps1 -WaitSeconds 10`을 실행한다.
+3. 실행 후 룰북에 없는 Chrome 사이트로 포커스를 옮긴다.
+4. bridge가 현재 계획/감지 활동/사유를 보여주며 “현재 계획에 맞나요?”라고 묻는지 확인한다.
+5. `plan_aligned` 또는 `return_now` 결정을 기록한다.
+6. 같은 패턴이 반복될 때 learned judgment와 `generate-activity-rule-proposals`가 작동하는지 확인한다.
 
 이 작업이 끝나면 프로젝트의 첫 실사용 루프가 닫힌다.
 
@@ -491,8 +534,9 @@ Chrome foreground
 -> Windows bridge 감지
 -> WSL core 기록/판단
 -> pending intervention
--> 선택지
+-> 계획 적합 여부 선택지
 -> decision 기록
+-> 반복 패턴 학습/제안
 ```
 
 ## 15. 성공 기준
