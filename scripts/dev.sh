@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+export PYTHONPATH="${PYTHONPATH:-src}"
+python3 -m lifeops.cli init-db
+python3 -m unittest discover -s tests

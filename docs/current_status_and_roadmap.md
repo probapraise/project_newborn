@@ -208,6 +208,20 @@ LifeOps Codex Operator는 사용자의 별도 AI 앱이 아니라, Codex CLI/Cod
 
 Windows 로그인 후 Start-LifeOps가 watcher, dispatcher, Codex boot briefing을 안정적으로 실행하는지 확인한다.
 
+Clean repo에서는 이 목표를 WSL2 core / Windows bridge 기준으로 다시 닫는다.
+
+구현 시작:
+
+- `python3 -m lifeops.server --host 127.0.0.1 --port 8765`
+- `GET /health`
+- `POST /events/activity`
+- `GET /interventions/pending`
+- `POST /interventions/{event_id}/decision`
+- `POST /recovery/enter`
+- `windows_bridge/Run-ActivityBridge.ps1`
+- `windows_bridge/Notify-Intervention.ps1`
+- `windows_bridge/Register-StartupTask.ps1`
+
 해야 할 일:
 
 - `Install-StartupTask.ps1` 실제 등록 테스트, 권한 거부 시 Startup 폴더 fallback 확인

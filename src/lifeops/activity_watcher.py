@@ -10,7 +10,6 @@ from .models import ActivitySnapshot
 from .paths import repo_root
 from .policy_engine import PolicyDecision, evaluate_activity
 from .schedule_engine import get_current_block
-from .windows_activity import get_foreground_activity
 
 DEFAULT_TZ = timezone(timedelta(hours=9), "Asia/Seoul")
 INTERVENTION_COOLDOWN_MINUTES = 15
@@ -131,6 +130,8 @@ def process_snapshot(snapshot: ActivitySnapshot) -> tuple[int | None, PolicyDeci
 
 
 def poll_once() -> tuple[ActivitySnapshot | None, PolicyDecision | None]:
+    from .windows_activity import get_foreground_activity
+
     snapshot = get_foreground_activity()
     if snapshot is None:
         write_heartbeat("Foreground activity unavailable; watcher is alive.")
@@ -140,6 +141,8 @@ def poll_once() -> tuple[ActivitySnapshot | None, PolicyDecision | None]:
 
 
 def run(interval_seconds: int, once: bool) -> None:
+    from .windows_activity import get_foreground_activity
+
     init_db()
     write_heartbeat("Stage 2 watcher started. Scope: Chrome/Steam only; title and domain-limited metadata only.")
     last_key: tuple[str, str, str | None, str] | None = None
