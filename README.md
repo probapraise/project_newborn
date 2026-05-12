@@ -61,6 +61,8 @@ Codex intervention prompt dispatch, decision logging 기본 UX, startup flow sel
 
 현재 상태와 다음 작업 목록은 [current_status_and_roadmap.md](docs/current_status_and_roadmap.md)를 기준으로 한다.
 
+프로젝트가 무엇을 만들려는지에 대한 최신 재정의는 [project_spec_v2.md](docs/project_spec_v2.md)를 기준으로 한다.
+
 ## 수동 1회 시작
 
 PowerShell에서 저장소 루트로 이동한 뒤 실행한다.

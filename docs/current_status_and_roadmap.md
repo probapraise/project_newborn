@@ -4,6 +4,8 @@ Last updated: 2026-05-12
 
 이 문서는 세션이 바뀌어도 LifeOps Codex Operator의 현재 목표, 완성된 범위, 다음 작업 순서를 빠르게 복구하기 위한 인계 문서다.
 
+프로젝트의 최신 스펙 정의는 `docs/project_spec_v2.md`를 우선한다. 이 문서는 진행 상태와 다음 작업 순서를 추적한다.
+
 ## Clean Repo 기준
 
 현재 기준 저장소는 WSL2 내부의 `/home/ljhljh/projects/project_newborn`이다. 이전 Windows-native 작업 폴더 `/home/ljhljh/project_newborn`은 참조용 source-of-truth/archive로만 남긴다.
