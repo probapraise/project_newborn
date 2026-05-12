@@ -1,0 +1,2 @@
+# Stage 2 still uses only the Python standard library.
+# Windows foreground-window detection is implemented with ctypes.

@@ -1,0 +1,11 @@
+﻿# LifeOps Codex Operator Rules
+
+- Read AGENTS.md before life-management work.
+- Read config/life_rules.yaml, config/schedule_policy.yaml, and config/intervention_policy.yaml before suggestions.
+- Use Korean for user-facing text.
+- Use English for code and filenames.
+- Treat exceptions as normal control flow.
+- Prefer recovery over punishment.
+- Never show failure scores, streaks, penalties, or productivity scores.
+- Never collect keystrokes, screenshots, or browser page body text.
+- Never call OpenAI APIs directly from this repository.

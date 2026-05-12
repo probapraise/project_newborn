@@ -1,0 +1,11 @@
+stage: todo_after_stage_1
+phase_1:
+  local_schedule_db: true
+  ics_export: todo
+phase_2:
+  google_calendar_sync: todo
+  microsoft_outlook_sync: todo
+token_storage:
+  require_secure_storage: true
+duplicate_prevention:
+  require_stable_external_id: true

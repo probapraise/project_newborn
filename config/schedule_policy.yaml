@@ -1,0 +1,15 @@
+work_shifts_are_hard_constraints: true
+sleep_protection_is_hard_constraint: true
+commute_and_prep_buffers_are_hard_constraints: true
+weekly_full_rest_day_required: true
+preserve_meals_medication_hygiene: true
+avoid_over_fragmenting_deep_work: true
+hyperfocus_save_state_before_transition: true
+plan_density: conservative
+daily_buffer_required: true
+no_debt_based_punishment: true
+
+default_blocks:
+  planning_review_minutes: 15
+  transition_buffer_minutes: 10
+  minimum_recovery_action_minutes: 3

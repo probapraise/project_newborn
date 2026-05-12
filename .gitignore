@@ -9,7 +9,8 @@ data/state.db
 data/events/*.jsonl
 data/daily/*.md
 data/proposals/*.md
-data/runtime/
+data/runtime/*
+!data/runtime/.gitkeep
 data/exports/boot_briefing_context.md
 data/exports/boot_prompt.md
 data/exports/intervention_prompt_*.md

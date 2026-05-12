@@ -1,0 +1,36 @@
+# Stage 2+ monitoring scope.
+# The system intentionally watches only Chrome and Steam.
+
+browser:
+  name: chrome
+  processes:
+    - chrome.exe
+  domain_detection: chrome_only
+  collect_domain_only: true
+  collect_page_body: false
+
+steam:
+  role: single_game_gateway
+  processes:
+    - steam.exe
+    - steamwebhelper.exe
+  assumption: "모든 게임은 Steam에 등록해서 실행한다. Steam 외 게임 런처나 개별 게임 프로세스 카탈로그는 관리하지 않는다."
+
+ignored_by_default:
+  browsers:
+    - msedge.exe
+    - firefox.exe
+    - brave.exe
+    - opera.exe
+  game_launchers:
+    - epicgameslauncher.exe
+    - riotclientservices.exe
+    - battle.net.exe
+    - goggalaxy.exe
+
+stage2_mvp_rules:
+  - "foreground process가 chrome.exe이면 Chrome 활동으로만 분류한다."
+  - "foreground process가 steam.exe 또는 steamwebhelper.exe이면 Steam 활동으로만 분류한다."
+  - "그 외 프로세스는 기본적으로 기록/개입 대상이 아니다."
+  - "Chrome에서는 도메인과 창 제목만 사용하고 페이지 본문은 수집하지 않는다."
+  - "게임 감지는 Steam을 단일 진입점으로 본다. 개별 게임 exe 목록을 만들지 않는다."

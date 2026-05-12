@@ -1,0 +1,30 @@
+# LifeOps baseline rules. User-facing descriptions stay in Korean.
+
+minimum_sleep_hours: 7.5
+sleep_window:
+  start: "23:30"
+  end: "07:00"
+
+pre_work_buffer_minutes: 60
+commute_buffer_minutes: 40
+
+meal_windows:
+  breakfast: ["07:00", "10:00"]
+  lunch: ["12:00", "14:30"]
+  dinner: ["18:00", "21:00"]
+
+medication_reminders:
+  enabled: true
+  windows: []
+
+shutdown_routine:
+  enabled: true
+  start_time: "22:45"
+  steps:
+    - "내일 첫 행동 확인"
+    - "진행 중인 작업 한 줄 저장"
+    - "수면 준비"
+
+weekly_rest_day_required: true
+no_makeup_punishment: true
+recovery_mode_enabled: true

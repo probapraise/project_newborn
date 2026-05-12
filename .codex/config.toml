@@ -1,0 +1,6 @@
+[profiles.lifeops]
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+# Do not enable web search by default. The system should work through Codex CLI
+# and local files without opening ChatGPT web or calling an LLM API directly.
