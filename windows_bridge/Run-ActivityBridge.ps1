@@ -129,8 +129,11 @@ do {
                     $notifyArgs.AutoChoice = $AutoChoice
                 }
                 & (Join-Path $PSScriptRoot 'Notify-Intervention.ps1') @notifyArgs
+            } elseif ($response.decision -and $response.decision.action -eq 'intervene') {
+                Write-Host "intervention 보류: cooldown 또는 시간당 제한으로 새 pending을 만들지 않았습니다."
             } else {
-                Write-Host "intervention 없음: 현재 정책상 즉시 개입 대상이 아닙니다."
+                $reason = if ($response.decision) { $response.decision.reason } else { '현재 정책상 즉시 개입 대상이 아닙니다.' }
+                Write-Host "intervention 없음: $reason"
             }
             $lastKey = $key
             $sentAny = $true

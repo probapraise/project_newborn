@@ -10,6 +10,7 @@ import re
 
 RISKY_DOMAIN_HINTS = frozenset(
     {
+        "dcinside.com",
         "youtube.com",
         "youtu.be",
         "twitch.tv",
@@ -21,6 +22,9 @@ RISKY_DOMAIN_HINTS = frozenset(
 
 RISKY_TITLE_HINTS = frozenset(
     {
+        "dcinside",
+        "디시인사이드",
+        "마이너 갤러리",
         "youtube",
         "twitch",
         "reddit",

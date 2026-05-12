@@ -100,6 +100,10 @@ def evaluate_activity(snapshot: ActivitySnapshot, current_block: Any = None) -> 
         risky = is_risky_chrome_activity(snapshot.window_title, snapshot.domain)
         if risky and _allows_research(current_block):
             return PolicyDecision("log_only", "Chrome 활동이 자료 확인 블록 안에 있습니다.")
+        if risky and _allows_recreation(current_block):
+            return PolicyDecision("log_only", "Chrome 활동이 휴식/회복 블록 안에 있습니다.")
+        if risky and current_block is None:
+            return PolicyDecision("log_only", "주의가 필요한 Chrome 활동이 감지되었지만 현재 계획 블록이 없습니다.")
         if risky and current_block is not None and not _allows_recreation(current_block):
             return PolicyDecision(
                 action="intervene",
