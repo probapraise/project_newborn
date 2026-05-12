@@ -114,7 +114,13 @@ do {
         $key = "$($activity.process_name)|$($activity.window_title)|$($activity.classification)"
         if ($key -ne $lastKey) {
             $response = Send-Activity -Activity $activity
+            $activityLabel = $activity.process_name
+            if ($activity.window_title) {
+                $activityLabel = "$activityLabel / $($activity.window_title)"
+            }
+            Write-Host "activity 전송: $activityLabel"
             if ($response.intervention -and $response.intervention.status -eq 'pending') {
+                Write-Host "intervention 생성: #$($response.intervention.id)"
                 $notifyArgs = @{
                     CoreUrl = $CoreUrl
                     EventId = [int]$response.intervention.id
@@ -123,6 +129,8 @@ do {
                     $notifyArgs.AutoChoice = $AutoChoice
                 }
                 & (Join-Path $PSScriptRoot 'Notify-Intervention.ps1') @notifyArgs
+            } else {
+                Write-Host "intervention 없음: 현재 정책상 즉시 개입 대상이 아닙니다."
             }
             $lastKey = $key
             $sentAny = $true
