@@ -1,9 +1,12 @@
 param(
     [string]$CoreUrl = 'http://127.0.0.1:8765',
-    [int]$EventId = 0
+    [int]$EventId = 0,
+    [string]$AutoChoice = ''
 )
 
 Set-StrictMode -Version Latest
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 $choices = @(
     @{ Number = '1'; Choice = 'return_now'; Label = '지금 복귀' },
@@ -29,7 +32,10 @@ foreach ($item in $choices) {
     Write-Host "$($item.Number). $($item.Label)"
 }
 
-$answer = Read-Host '선택'
+$answer = $AutoChoice
+if (-not $answer) {
+    $answer = Read-Host '선택'
+}
 $selected = $choices | Where-Object { $_.Number -eq $answer -or $_.Choice -eq $answer } | Select-Object -First 1
 if (-not $selected) {
     Write-Host '선택을 기록하지 않았습니다.'

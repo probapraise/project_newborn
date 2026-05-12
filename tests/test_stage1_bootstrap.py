@@ -105,6 +105,11 @@ class RepositorySafetyTests(unittest.TestCase):
             for token in forbidden:
                 self.assertNotIn(token, lowered, str(path))
 
+    def test_windows_bridge_does_not_shadow_powershell_pid(self) -> None:
+        bridge = self.repo / "windows_bridge" / "Run-ActivityBridge.ps1"
+        text = bridge.read_text(encoding="utf-8").lower()
+        self.assertNotIn("$pid", text)
+
 
 
 class ScopeConstraintTests(unittest.TestCase):

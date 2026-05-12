@@ -14,6 +14,12 @@ Windows bridge는 비즈니스 판단을 하지 않는다. Chrome/Steam foregrou
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\windows_bridge\Run-ActivityBridge.ps1 -Once
 ```
 
+현재 foreground 앱과 무관하게 core 연결/전송/결정 기록 경로를 점검하려면 sample flow를 사용한다. 단, WSL DB에 현재 시간대의 보호 블록이 있어야 pending intervention이 생성된다.
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\windows_bridge\Test-BridgeFlow.ps1 -Choice return_now
+```
+
 ## 로그온 등록
 
 ```powershell

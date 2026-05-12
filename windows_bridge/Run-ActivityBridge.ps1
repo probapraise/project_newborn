@@ -1,10 +1,14 @@
 param(
     [string]$CoreUrl = 'http://127.0.0.1:8765',
     [int]$IntervalSeconds = 5,
-    [switch]$Once
+    [switch]$Once,
+    [switch]$SampleActivity,
+    [string]$AutoChoice = ''
 )
 
 Set-StrictMode -Version Latest
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 Add-Type @'
 using System;
@@ -24,14 +28,24 @@ public static class LifeOpsWin32 {
 '@
 
 function Get-ForegroundActivity {
+    if ($SampleActivity) {
+        return @{
+            timestamp = [DateTimeOffset]::UtcNow.ToString('o')
+            process_name = 'chrome.exe'
+            window_title = 'YouTube - Chrome'
+            domain = 'youtube.com'
+            classification = 'chrome'
+        }
+    }
+
     $hwnd = [LifeOpsWin32]::GetForegroundWindow()
     if ($hwnd -eq [IntPtr]::Zero) { return $null }
 
-    [uint32]$pid = 0
-    [void][LifeOpsWin32]::GetWindowThreadProcessId($hwnd, [ref]$pid)
-    if ($pid -eq 0) { return $null }
+    [uint32]$foregroundProcessId = 0
+    [void][LifeOpsWin32]::GetWindowThreadProcessId($hwnd, [ref]$foregroundProcessId)
+    if ($foregroundProcessId -eq 0) { return $null }
 
-    $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
+    $process = Get-Process -Id $foregroundProcessId -ErrorAction SilentlyContinue
     if (-not $process) { return $null }
 
     $name = ($process.ProcessName + '.exe').ToLowerInvariant()
@@ -78,7 +92,14 @@ do {
         if ($key -ne $lastKey) {
             $response = Send-Activity -Activity $activity
             if ($response.intervention -and $response.intervention.status -eq 'pending') {
-                & (Join-Path $PSScriptRoot 'Notify-Intervention.ps1') -CoreUrl $CoreUrl -EventId ([int]$response.intervention.id)
+                $notifyArgs = @{
+                    CoreUrl = $CoreUrl
+                    EventId = [int]$response.intervention.id
+                }
+                if ($AutoChoice) {
+                    $notifyArgs.AutoChoice = $AutoChoice
+                }
+                & (Join-Path $PSScriptRoot 'Notify-Intervention.ps1') @notifyArgs
             }
             $lastKey = $key
         }
